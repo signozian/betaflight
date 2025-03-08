@@ -2687,7 +2687,7 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
 
 static void cliVtx(const char *cmdName, char *cmdline)
 {
-    const char *format = "vtx %u %u %u %u %u %u %u";
+    const char *format = "vtx %u %u %u %u %u %u %u %u"; // Add one %u for freq
     const char *ptr;
 
     if (isEmpty(cmdline)) {
@@ -2739,9 +2739,20 @@ static void cliVtx(const char *cmdName, char *cmdline)
                     validArgumentCount++;
                 }
             }
+            // Add frequency parsing
+            ptr = nextArg(ptr);
+            if (ptr) {
+                int val = atoi(ptr);
+                if (val >= VTX_SETTINGS_MIN_FREQUENCY_MHZ && val <= VTX_SETTINGS_MAX_FREQUENCY_MHZ) {
+                    cac->freq = val;
+                    validArgumentCount++;
+                }
+            } else {
+                cac->freq = 0; // No direct frequency specified
+            }
             ptr = processChannelRangeArgs(ptr, &cac->range, &validArgumentCount);
 
-            if (validArgumentCount != 6) {
+            if (validArgumentCount < 6) {
                 memset(cac, 0, sizeof(vtxChannelActivationCondition_t));
                 cliShowInvalidArgumentCountError(cmdName);
             } else {
@@ -2751,6 +2762,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
                     cac->band,
                     cac->channel,
                     cac->power,
+                    cac->freq,
                     MODE_STEP_TO_CHANNEL_VALUE(cac->range.startStep),
                     MODE_STEP_TO_CHANNEL_VALUE(cac->range.endStep)
                 );

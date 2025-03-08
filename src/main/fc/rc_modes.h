@@ -68,6 +68,8 @@ typedef enum {
     BOXPREARM,
     BOXBEEPGPSCOUNT,
     BOXVTXPITMODE,
+    BOXVTXFREQUP,    // New mode for frequency up
+    BOXVTXFREQDOWN, // New mode for frequency down
     BOXPARALYZE,
     BOXUSER1,
     BOXUSER2,

@@ -82,6 +82,38 @@ static void vtxUpdateBandAndChannel(uint8_t bandStep, uint8_t channelStep)
     }
 }
 
+static void vtxUpdateFrequency(int16_t frequencyStep)
+{
+    if (ARMING_FLAG(ARMED)) {
+        locked = 1;
+    }
+
+    if (!locked && vtxCommonDevice()) {
+        uint16_t currentFreq = 0;
+        vtxCommonGetFrequency(vtxCommonDevice(), &currentFreq);
+        
+        // Calculate new frequency
+        uint16_t newFreq = currentFreq + frequencyStep;
+        
+        // Constrain frequency to valid range
+        if (newFreq >= VTX_SETTINGS_MIN_FREQUENCY_MHZ && newFreq <= VTX_SETTINGS_MAX_FREQUENCY_MHZ) {
+            vtxSettingsConfigMutable()->freq = newFreq;
+            vtxSettingsConfigMutable()->band = 0; // Set band to 0 to indicate custom frequency
+            vtxSettingsConfigMutable()->channel = 0; // Set channel to 0 to indicate custom frequency
+        }
+    }
+}
+
+void vtxIncrementFrequency(void)
+{
+    vtxUpdateFrequency(1); // Increment by 1 MHz
+}
+
+void vtxDecrementFrequency(void)
+{
+    vtxUpdateFrequency(-1); // Decrement by 1 MHz
+}
+
 void vtxIncrementBand(void)
 {
     vtxUpdateBandAndChannel(+1, 0);
@@ -119,11 +151,19 @@ void vtxUpdateActivatedChannel(void)
                 lastIndex = index;
 
                 if (!locked) {
-                    if (vtxChannelActivationCondition->band > 0) {
-                        vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
-                    }
-                    if (vtxChannelActivationCondition->channel > 0) {
-                        vtxSettingsConfigMutable()->channel = vtxChannelActivationCondition->channel;
+                    // Check if frequency direct adjustment is specified
+                    if (vtxChannelActivationCondition->freq > 0) {
+                        vtxSettingsConfigMutable()->freq = vtxChannelActivationCondition->freq;
+                        vtxSettingsConfigMutable()->band = 0; // Set band to 0 for direct freq
+                        vtxSettingsConfigMutable()->channel = 0; // Set channel to 0 for direct freq
+                    } else {
+                        // Original band/channel selection
+                        if (vtxChannelActivationCondition->band > 0) {
+                            vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
+                        }
+                        if (vtxChannelActivationCondition->channel > 0) {
+                            vtxSettingsConfigMutable()->channel = vtxChannelActivationCondition->channel;
+                        }
                     }
                 }
 
@@ -133,6 +173,36 @@ void vtxUpdateActivatedChannel(void)
                 break;
             }
         }
+    }
+}
+
+
+void vtxUpdateFrequencyFromRc(void)
+{
+    static timeMs_t lastFreqAdjustTimeMs = 0;
+    static bool vtxFreqUpActivated = false;
+    static bool vtxFreqDownActivated = false;
+    
+    // Only allow adjustment every 200ms to prevent too rapid changes
+    const timeMs_t currentTimeMs = millis();
+    const bool allowAdjustment = (currentTimeMs - lastFreqAdjustTimeMs) >= 200;
+    
+    if (allowAdjustment) {
+        // Check if VTX frequency up mode is active
+        bool freqUpActive = IS_RC_MODE_ACTIVE(BOXVTXFREQUP);
+        if (freqUpActive && !vtxFreqUpActivated) {
+            vtxIncrementFrequency();
+            lastFreqAdjustTimeMs = currentTimeMs;
+        }
+        vtxFreqUpActivated = freqUpActive;
+        
+        // Check if VTX frequency down mode is active
+        bool freqDownActive = IS_RC_MODE_ACTIVE(BOXVTXFREQDOWN);
+        if (freqDownActive && !vtxFreqDownActivated) {
+            vtxDecrementFrequency();
+            lastFreqAdjustTimeMs = currentTimeMs;
+        }
+        vtxFreqDownActivated = freqDownActive;
     }
 }
 
@@ -186,6 +256,8 @@ void vtxCyclePower(const uint8_t powerStep)
         vtxSettingsConfigMutable()->power = newPower;
     }
 }
+
+
 
 /**
  * Allow VTX channel/band/rf power/on-off and save via a single button.

@@ -37,11 +37,8 @@
 
 #endif
 
-#if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP) || defined(USE_VTX_MSP)
-
+// Enable frequency command setting for all VTX types
 #define VTX_SETTINGS_FREQCMD
-
-#endif
 
 // check value for MSP_SET_VTX_CONFIG to determine if value is encoded
 // band/channel or frequency in MHz (3 bits for band and 3 bits for channel)

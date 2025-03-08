@@ -249,6 +249,9 @@ void vtxUpdate(timeUs_t currentTimeUs)
         // Check input sources for config updates
         vtxControlInputPoll();
 
+        // Update VTX settings
+        vtxUpdateFrequencyFromRc();
+
         const uint8_t startingSchedule = currentSchedule;
         bool vtxUpdatePending = false;
         do {
