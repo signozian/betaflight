@@ -55,6 +55,7 @@ void vtxIncrementChannel(void);
 void vtxDecrementChannel(void);
 void vtxIncrementFrequency(void);
 void vtxDecrementFrequency(void);
+void vtxUpdateFrequencyFromRc(void);
 
 void vtxCyclePower(const uint8_t powerStep);
 void vtxCycleBandOrChannel(const uint8_t bandStep, const uint8_t channelStep);

@@ -16,8 +16,8 @@
 #
 
 # The target to build, see BASE_TARGETS below
-TARGET    ?=
-CONFIG    ?=
+TARGET    ?= 
+CONFIG    ?= 
 
 # Compile-time options
 OPTIONS   ?=
